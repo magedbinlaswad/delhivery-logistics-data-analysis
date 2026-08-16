@@ -11,7 +11,7 @@ This project focuses on analyzing the operational efficiency of **Delhivery**, a
 ## 📊 Interactive Dashboard
 *(Click the image below to view the interactive Looker Studio report)*
 
-[![Delhivery Dashboard](https://github.com/magedbinlaswad/delhivery-logistics-data-analysis/blob/504b40dd35e7e502d02b4aafc16aec2e780e446e/Looker-Studio/delhivery-logistics-dashboard.png)
+![Delhivery Dashboard](https://github.com/magedbinlaswad/delhivery-logistics-data-analysis/blob/504b40dd35e7e502d02b4aafc16aec2e780e446e/Looker-Studio/delhivery-logistics-dashboard.png)
 
 ## ⚙️ Data Pipeline & SQL Workflow
 The raw dataset contained multiple segment-level records with inconsistencies, missing values, and duplicates. A robust SQL pipeline was built to transform this raw data into a clean, BI-ready dataset:
