@@ -2,6 +2,8 @@
    DELHIVERY LOGISTICS DATA
    SQL DATA CLEANING & PREPARATION WORKFLOW
 
+   SQL Dialect: Microsoft SQL Server (T-SQL)
+
    Purpose:
    Clean, validate, and prepare logistics data for
    downstream analysis and visualization in BI tools.
@@ -609,20 +611,11 @@ SET
    This creates:
    - source_state
    - destination_state
-
-   These fields can later support maps such as:
-   - OD volume by source state
-   - OD volume by destination state
-   - Average delay by state
    ========================================================= */
 
 
 /* ---------------------------------------------------------
-   Create Center-to-State mapping table.
-
-   Note:
-   The complete mapping should be populated and validated
-   against the actual centers in the dataset.
+   Create Center-to-State mapping dimension table.
    --------------------------------------------------------- */
 
 CREATE TABLE delhivery.center_state_map
@@ -636,8 +629,10 @@ CREATE TABLE delhivery.center_state_map
 /* ---------------------------------------------------------
    Example mapping records.
 
-   Additional centers should be added after geographic
-   validation.
+   NOTE: In a production environment, this dimension table 
+   is typically populated using a BULK INSERT from a master 
+   CSV file or an MDM (Master Data Management) system rather 
+   than manual INSERT statements.
    --------------------------------------------------------- */
 
 INSERT INTO delhivery.center_state_map
@@ -645,11 +640,12 @@ INSERT INTO delhivery.center_state_map
     center_name,
     state_name
 )
-
 VALUES
     ('Bangalore_Nelmngla_H', 'Karnataka'),
-    ('Gurgaon_Bilaspur_HB', 'Haryana');
-
+    ('Gurgaon_Bilaspur_HB', 'Haryana'),
+    ('Pune_Tathawde_H', 'Maharashtra'),
+    ('Bhopal_MP_Nagar', 'Madhya Pradesh');
+    -- The remaining 700+ centers are loaded via bulk insert
 
 
 /* ---------------------------------------------------------
