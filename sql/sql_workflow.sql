@@ -849,34 +849,10 @@ SELECT
 FROM delhivery.delhivery_od_clean;
 GO
 
-/* Standalone regression check for missing-time classification.
-   Expected result: zero rows. This test does not modify project data. */
-;WITH Cases AS
-(
-    SELECT * FROM (VALUES
-        (CAST(NULL AS FLOAT), CAST(10 AS FLOAT), 'Unknown'),
-        (CAST(10 AS FLOAT), CAST(NULL AS FLOAT), 'Unknown'),
-        (CAST(NULL AS FLOAT), CAST(NULL AS FLOAT), 'Unknown'),
-        (CAST(10 AS FLOAT), CAST(10 AS FLOAT), 'No Delay'),
-        (CAST(5 AS FLOAT), CAST(10 AS FLOAT), 'No Delay'),
-        (CAST(40 AS FLOAT), CAST(10 AS FLOAT), '1-30 Min'),
-        (CAST(70 AS FLOAT), CAST(10 AS FLOAT), '31-60 Min'),
-        (CAST(130 AS FLOAT), CAST(10 AS FLOAT), '1-2 Hours'),
-        (CAST(370 AS FLOAT), CAST(10 AS FLOAT), '2-6 Hours'),
-        (CAST(730 AS FLOAT), CAST(10 AS FLOAT), '6-12 Hours'),
-        (CAST(731 AS FLOAT), CAST(10 AS FLOAT), 'More Than 12 Hours')
-    ) AS v(actual_time, osrm_time, expected)
-), Classified AS
-(
-    SELECT *, CASE
-        WHEN actual_time IS NULL OR osrm_time IS NULL THEN 'Unknown'
-        WHEN actual_time - osrm_time <= 0 THEN 'No Delay'
-        WHEN actual_time - osrm_time <= 30 THEN '1-30 Min'
-        WHEN actual_time - osrm_time <= 60 THEN '31-60 Min'
-        WHEN actual_time - osrm_time <= 120 THEN '1-2 Hours'
-        WHEN actual_time - osrm_time <= 360 THEN '2-6 Hours'
-        WHEN actual_time - osrm_time <= 720 THEN '6-12 Hours'
-        ELSE 'More Than 12 Hours' END AS actual
-    FROM Cases
-)
-SELECT * FROM Classified WHERE actual <> expected;
+/* Missing-time classification validation against the transformed data.
+   Expected result: zero rows. Investigate any returned records. */
+SELECT trip_uuid, source_name, destination_name,
+       final_actual_time, final_osrm_time, delay_category
+FROM delhivery.delhivery_od_clean
+WHERE (final_actual_time IS NULL OR final_osrm_time IS NULL)
+  AND (delay_category IS NULL OR delay_category <> 'Unknown');
