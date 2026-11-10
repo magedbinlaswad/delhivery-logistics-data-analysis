@@ -1,34 +1,75 @@
-# 🚚 Delhivery Logistics: Performance & Delay Analysis
+# Delhivery Logistics: Performance & Delay Analysis
 
-## 📋 Project Overview
-This project focuses on analyzing the operational efficiency of **Delhivery**, a major logistics and supply chain provider. The primary objective is to process raw, complex logistics data, track Origin-Destination (OD) movements accurately, and build an interactive dashboard to monitor delivery performance, route efficiency, and operational bottlenecks.
+**SQL Server · Looker Studio · Data Quality**
 
-## 🛠️ Tech Stack
-* **Data Processing & Cleaning:** SQL Server (T-SQL)
-* **Data Visualization:** Looker Studio
-* **Core Skills Applied:** Data Profiling, Feature Engineering, Window Functions, Dimensional Modeling, and Data Storytelling.
+A portfolio case study that prepares segment-level logistics records for origin–destination (OD) analysis, then presents route composition and travel-time variance in a Looker Studio dashboard.
 
-## 📊 Interactive Dashboard
-*(Click the image below to view the interactive Looker Studio report)*
+![Delhivery logistics dashboard](Looker-Studio/delhivery-logistics-dashboard.png)
 
-![Delhivery Dashboard](https://github.com/magedbinlaswad/delhivery-logistics-data-analysis/blob/504b40dd35e7e502d02b4aafc16aec2e780e446e/Looker-Studio/delhivery-logistics-dashboard.png)
+**Static preview:** the image opens a screenshot. A public interactive Looker Studio report is not currently linked.
 
-## ⚙️ Data Pipeline & SQL Workflow
-The raw dataset contained multiple segment-level records with inconsistencies, missing values, and duplicates. A robust SQL pipeline was built to transform this raw data into a clean, BI-ready dataset:
+## Business questions
 
-1. **Data Profiling & Quality Checks:** Handled missing values, flagged negative time durations, and identified true duplicates using window functions (`ROW_NUMBER()`).
-2. **Grain Definition (OD-Level):** Grouped and transformed granular segment records into a single analytical record per Origin-Destination movement to prevent data duplication in BI tools.
-3. **Feature Engineering:** Calculated precise delay durations, created delay segmentation categories (e.g., *1-30 Min*, *1-2 Hours*, *More Than 12 Hours*), and extracted time-series dimensions for trend analysis.
-4. **Geographic Enrichment:** Mapped source and destination centers to their respective states to enable regional performance tracking.
+- How many distinct trips and OD movements are represented?
+- How does actual travel time differ from the OSRM baseline?
+- Which delay ranges and route types account for most movements?
+- Which locations warrant further operational investigation?
 
-## 💡 Key Business Insights
-The final Looker Studio dashboard provides stakeholders with immediate visibility into:
-* **Delivery Status Overview:** A clear ratio of *Delayed*, *On-Time*, and *Early* deliveries.
-* **Delay Distribution:** A granular breakdown of delay severities to help operations teams prioritize interventions.
-* **Route Type Efficiency:** Volume comparison between Full Truck Load (FTL) and Carting operations.
-* **Geographic Bottlenecks:** Identification of the Top 10 states experiencing the highest average delivery delays.
+## Results shown in the original dashboard
 
-## 📁 Repository Structure
-* `sql_workflow.sql`: The complete T-SQL script containing the data cleaning, validation, and transformation logic.
-* `delhivery-logistics-dashboard.png`: High-resolution screenshot of the final BI dashboard.
-* `README.md`: Project documentation.
+| Metric | Dashboard result |
+| --- | ---: |
+| Distinct trips | 14,817 |
+| OD movements | 26,369 |
+| Average time variance | 110 minutes |
+| FTL / Carting composition | 73.8% / 26.2% |
+| Exactly on-baseline movements | 63 (0.24% of OD movements) |
+
+The preview was produced from the original analysis. It has not been regenerated following the SQL maintenance changes in this repository.
+
+## Understand the metrics
+
+- **Grain:** one row per combination of trip, source, destination, OD start, and OD end. A trip can contain multiple OD movements.
+- **Delay minutes:** `final_actual_time - final_osrm_time`. OSRM is the comparison baseline; this is not evidence of a missed customer delivery promise or contractual SLA.
+- **Status:** positive variance is delayed relative to the baseline; negative variance is early; zero is exactly on baseline. The screenshot’s 0.24% excludes early movements.
+- **Missing times:** the SQL labels the delay category `Unknown` instead of assigning it to the longest-delay bucket.
+- **Geography:** state-level results require a complete, verified center-to-state lookup. Only four example mappings are published.
+
+## SQL workflow
+
+1. Profile row counts, data types, missing values, and categorical fields.
+2. Flag suspicious durations, timestamp ordering, and duplicate records.
+3. Preserve raw data and create a working table; standardize text and null negative segment durations.
+4. Select an OD record using the highest cumulative actual time, with deterministic tie-breakers.
+5. Calculate time variance, percentage variance, delay bands, and date dimensions.
+6. Join source and destination centers to a state mapping table.
+7. Check missing mappings and duplicate OD keys; expose a reporting view.
+
+The OD selection assumes cumulative actual time increases within a movement. Validate that assumption against the source data before applying the workflow elsewhere. Profiling checks report suspicious records; not every flagged condition is automatically corrected or removed.
+
+## Repository guide
+
+| File | Purpose |
+| --- | --- |
+| [sql/sql_workflow.sql](sql/sql_workflow.sql) | Documented T-SQL preparation, validation, and reporting view |
+| [Looker-Studio/delhivery-logistics-dashboard.png](Looker-Studio/delhivery-logistics-dashboard.png) | Original dashboard screenshot |
+
+## Run and reproduce
+
+1. Use SQL Server 2017 or newer and a client that understands `GO`, such as SSMS.
+2. Import the source dataset as `delhivery.delhivery_data`, matching the columns referenced by the script. The raw dataset and import schema are not supplied here.
+3. Run the numbered sections in order in a dedicated analysis database. Review the checks before transformation.
+4. Supply a complete center-to-state mapping before relying on geographic outputs.
+5. Query `delhivery.vw_delivery_analysis` and reconcile row counts, NULLs, and aggregate results.
+
+The script creates working tables. Do not rerun the table-creation sections against existing outputs without reviewing/resetting those derived tables in your own analysis environment. The `CREATE OR ALTER VIEW` statement is isolated in its own batch.
+
+## Interpretation and limitations
+
+Travel-time variance can prioritize route investigations, but it does not identify a causal explanation by itself. Compare volume, distance, route type, and data coverage before drawing operational conclusions.
+
+The source dataset, full geographic mapping, and editable Looker Studio report are not included. The repository therefore documents the transformation approach and published results without claiming that the complete dashboard is reproducible from the supplied files alone.
+
+## Author
+
+**Maged Bin Laswad** · [LinkedIn](https://www.linkedin.com/in/maged-binlaswad-63261726a/)
